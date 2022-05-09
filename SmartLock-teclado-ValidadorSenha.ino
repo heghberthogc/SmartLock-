@@ -4,11 +4,6 @@
  *  Autor: Heghbertho G Costa - 85-992850808
  *  Melhorias no código, identificação de leds, uso de portas digitais
  *  Introdução de leitura pelo SD
- *########################### 02-03-22 
- * Incluir módulo Relógio - falha
-   *########################### 24-03-22 
- * Retirada de leitura via sd, usando formula de leutura de código
- * 
 */
 
 #include <Keypad.h> //INCLUSÃO DE BIBLIOTECA
@@ -28,6 +23,7 @@ char matriz_teclas[qtdLinhas][qtdColunas] = {
   {'*','0','#'}
 };
 
+const float versao = 0.1;
 byte PinosqtdLinhas[qtdLinhas] = {3, 4, 5, 6}; //PINOS UTILIZADOS PELAS LINHAS
 byte PinosqtdColunas[qtdColunas] = {8, 9, 7}; //PINOS UTILIZADOS PELAS COLUNAS (original pino 7 seria 10, porém arduino com porta defeituosa)
 //INICIALIZAÇÃO DO TECLADO
@@ -52,6 +48,8 @@ String fileName = "registro.txt";
 int portaAberta = 5; // Aproximadamente 15 segundos (1000 + 700) miselimos
 bool resultado;
 bool retorno;
+int tentativas = 0;
+int vezes = 1;
 
 //##################################################################################################### Funções 
 
@@ -124,6 +122,7 @@ void setup(){
   pinMode(ledVerde, OUTPUT);
   pinMode(ledAmarelo, OUTPUT);
 
+  Serial.println("VErsão: " + String(versao));
   Serial.println(F("Aperte uma tecla...")); 
   Serial.println(); 
   digitalWrite(ledAmarelo, HIGH);
@@ -160,13 +159,13 @@ void loop(){
   
   char tecla = meuteclado.getKey(); //VERIFICA SE ALGUMA DAS TECLAS FOI PRESSIONADA - teclado 
   if(tecla != NO_KEY){
-  digitalWrite(ledAmarelo, HIGH);
-    
+
+  
   //Serial.println(tecla);
     estado=1;
-    if(tecla=='#'){
+    if(tecla=='#'){  
       beep0();
-      digitalWrite(ledAmarelo, LOW);     
+           
       Serial.println(digitada);
       
       if(Verifica(digitada)){
@@ -174,7 +173,37 @@ void loop(){
         estado=3;
         leds(estado);
         estado=0;
+        tentativas = 0;
+        vezes = 1;
       }else{
+
+        if(tentativas >=3){
+          Serial.println("Tentativas excessivas");
+          gravaRegistro("Tentativas excessivas o id:" + digitada );
+          for(int i =0;i < vezes*4;i++){
+            beep2();
+            digitalWrite(ledAmarelo, LOW);  
+            digitalWrite(ledVermelho, LOW);
+            digitalWrite(ledVerde,LOW);
+            beep2();
+            delay(1000);
+            digitalWrite(ledAmarelo, HIGH);  
+            digitalWrite(ledVermelho, HIGH);
+            digitalWrite(ledVerde,HIGH);
+            
+          }
+          
+          if(vezes <3){
+            vezes++;
+            delay(30000);
+          }else{
+            delay(60000);
+          }
+          
+          tentativas = 0;
+       }
+        
+        tentativas++;
         estado=2;
         leds(estado);
         delay(500);
@@ -193,8 +222,13 @@ void leds(int e){ //0=Aguardando, 1=Digitando, 2=Negado, 3=Aceito
   if(e==0){
     Serial.println(F("Aguardando"));
     digitalWrite(ledAmarelo, HIGH);
+    digitalWrite(ledVerde, LOW);
+    digitalWrite(ledVermelho, LOW);
   }else if(e==1){
     //Serial.println(F("Digitando "));
+    digitalWrite(ledAmarelo, HIGH);
+    digitalWrite(ledVerde, LOW);
+    digitalWrite(ledVermelho, LOW);
     tone(buzzer,449,100);
     //delay(100);
   }else if(e==2){
@@ -268,7 +302,7 @@ bool Verifica(String id){
    * cadeia exata de 6 dígitos
    * divide-se cada número (tipo split)
    * cálculo:
-   *    (a) = coma-se o priemiro ao quinto número
+   *    (a) = soma-se o priemiro ao quinto número
    *    (b) = multiplica-se o primeiro numero pelo sexto número
    *    (c) = soma-se (A) + (B)  
    *    Faz-se a prova dos nove
@@ -278,7 +312,7 @@ bool Verifica(String id){
   int soma = 0;
   retorno = false;
 
-  if(id.length() != 6 or id == "147258"){
+  if(id.length() != 6 or id == "147258" or id == "124578"){
    Serial.println("Maior ou Menor que 6 ou difitado número bloqueado");
    return retorno;
   }
