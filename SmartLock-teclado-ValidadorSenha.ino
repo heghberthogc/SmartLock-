@@ -122,7 +122,7 @@ void setup(){
   pinMode(ledVerde, OUTPUT);
   pinMode(ledAmarelo, OUTPUT);
 
-  Serial.println("VErsão: " + String(versao));
+  Serial.println("Versão: " + String(versao));
   Serial.println(F("Aperte uma tecla...")); 
   Serial.println(); 
   digitalWrite(ledAmarelo, HIGH);
@@ -161,7 +161,7 @@ void loop(){
   if(tecla != NO_KEY){
 
   
-  //Serial.println(tecla);
+  Serial.println(tecla);
     estado=1;
     if(tecla=='#'){  
       beep0();
